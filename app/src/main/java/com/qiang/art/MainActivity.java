@@ -1,15 +1,38 @@
 package com.qiang.art;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ListView;
 
-public class MainActivity extends AppCompatActivity {
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import serviceTraining.ServiceActivity;
+
+public class MainActivity extends BaseActivity implements AdapterView.OnItemClickListener {
+
+    ListView listView;
+    static Map<String,Class> listMap;
+    static {
+
+        listMap = new HashMap<>();
+         listMap.put(ServiceActivity.class.getSimpleName(),ServiceActivity.class);
+
+
+
+    }
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,7 +49,35 @@ public class MainActivity extends AppCompatActivity {
                         .setAction("Action", null).show();
             }
         });
+
+        listView = (ListView) findViewById(R.id.listView);
+        listView.setAdapter(new MyListAdapter(listMap ,this));
+        listView.setOnItemClickListener(this);
+
     }
+
+
+
+
+    @Override
+    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+
+        List<String> list = new ArrayList<>(listMap.keySet());
+
+        Class c = listMap.get(list.get(position));
+        startActivity(new Intent(this,c));
+
+
+    }
+
+
+
+
+
+
+
+
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -49,4 +100,6 @@ public class MainActivity extends AppCompatActivity {
 
         return super.onOptionsItemSelected(item);
     }
+
+
 }
