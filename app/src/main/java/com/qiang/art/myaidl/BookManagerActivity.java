@@ -29,12 +29,16 @@ public class BookManagerActivity extends BaseActivity {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
             mBound = true;
-            Log.d(TAG,"来到32??");
+            Log.d(TAG, "来到32??");
             IBookManager bookManager = IBookManager.Stub.asInterface(service);
 
+
             try {
+                bookManager.addBook(new Book(3,"安卓艺术开发"));
+
                List<Book> list = bookManager.getBookList();
                 Log.d(TAG, "34 list = "+list.getClass().getCanonicalName());
+                Log.d(TAG, "34 list = "+list.toString());
 
             } catch (RemoteException e) {
                 e.printStackTrace();
@@ -50,18 +54,7 @@ public class BookManagerActivity extends BaseActivity {
         }
     };
 
-    ServiceConnection mServiceConnection2 = new ServiceConnection() {
 
-        @Override
-        public void onServiceConnected(ComponentName name, IBinder service) {
-
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName name) {
-
-        }
-    };
 
 
     @Override
@@ -70,7 +63,7 @@ public class BookManagerActivity extends BaseActivity {
 
         setContentView(R.layout.activity_book_manager);
         Intent intent = new Intent(this,BookManagerService.class);
-     bindService(intent,mServiceConnection2, Context.BIND_ABOVE_CLIENT);
+     bindService(intent,mServiceConnection, Context.BIND_AUTO_CREATE);
 
         Log.d(TAG,"来到75??");
 

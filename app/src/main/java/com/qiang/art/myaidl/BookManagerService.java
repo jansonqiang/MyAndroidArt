@@ -10,6 +10,7 @@ import android.util.Log;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Created by qiang on 16/1/10.
@@ -18,7 +19,12 @@ public class BookManagerService extends Service {
 
 
     public static final String TAG = BookManagerService.class.getSimpleName();
+
+    private AtomicBoolean mIsServiceDistory = new AtomicBoolean(false);
+
     private CopyOnWriteArrayList<Book> mBookList = new CopyOnWriteArrayList<>();
+
+    private CopyOnWriteArrayList<IOnNewBookArrivedListener> mListenerList = new CopyOnWriteArrayList<>();
 
 
     private Binder mBinder = new IBookManager.Stub(){
@@ -37,25 +43,34 @@ public class BookManagerService extends Service {
         @Override
         public void registerListener(IOnNewBookArrivedListener listener) throws RemoteException {
 
+            if(!mListenerList.contains(listener)){
+                mListenerList.add(listener);
+            }else{
+                Log.d(TAG,"listener exists");
+            }
+
+            Log.d(TAG, "listener.size =" + mListenerList.size());
+
         }
 
         @Override
         public void unregisterListener(IOnNewBookArrivedListener listener) throws RemoteException {
+
+            if(!mListenerList.contains(listener)){
+
+                mListenerList.remove(listener);
+
+            }else{
+                Log.d(TAG,"this listern not found");
+            }
+
+            Log.d(TAG,"listener.size ="+mListenerList.size());
 
         }
     };
 
 
 
-    class MyBinder extends Binder {
-
-        public void startDownload() {
-            Log.d("TAG", "startDownload() executed");
-            // 执行具体的下载任务
-        }
-
-    }
-    private MyBinder mBinder2 = new MyBinder();
 
 
 
@@ -71,7 +86,7 @@ public class BookManagerService extends Service {
     @Override
     public IBinder onBind(Intent intent) {
        Log.d(TAG,"运行到service 60~~~");
-        return mBinder2;
+        return mBinder;
     }
 
 
