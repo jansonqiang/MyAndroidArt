@@ -4,7 +4,9 @@ import android.app.Service;
 import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
+import android.os.RemoteCallbackList;
 import android.os.RemoteException;
+import android.os.SystemClock;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
@@ -24,13 +26,16 @@ public class BookManagerService extends Service {
 
     private CopyOnWriteArrayList<Book> mBookList = new CopyOnWriteArrayList<>();
 
-    private CopyOnWriteArrayList<IOnNewBookArrivedListener> mListenerList = new CopyOnWriteArrayList<>();
+    private RemoteCallbackList<IOnNewBookArrivedListener> mListenerList = new RemoteCallbackList<>(); //夸进程专用list
 
 
     private Binder mBinder = new IBookManager.Stub(){
 
         @Override
         public List<Book> getBookList() throws RemoteException {
+
+            SystemClock.sleep(5000);
+
             return mBookList;
         }
 
@@ -43,32 +48,63 @@ public class BookManagerService extends Service {
         @Override
         public void registerListener(IOnNewBookArrivedListener listener) throws RemoteException {
 
-            if(!mListenerList.contains(listener)){
-                mListenerList.add(listener);
-            }else{
-                Log.d(TAG,"listener exists");
-            }
+            mListenerList.register(listener);
 
-            Log.d(TAG, "listener.size =" + mListenerList.size());
 
         }
 
         @Override
         public void unregisterListener(IOnNewBookArrivedListener listener) throws RemoteException {
 
-            if(!mListenerList.contains(listener)){
+            mListenerList.unregister(listener);
 
-                mListenerList.remove(listener);
 
-            }else{
-                Log.d(TAG,"this listern not found");
-            }
-
-            Log.d(TAG,"listener.size ="+mListenerList.size());
 
         }
     };
 
+    private void onNewBookArrived(Book book) throws RemoteException {
+
+
+        final int n = mListenerList.beginBroadcast();
+         for(int i =0;i<n;i++){
+
+             IOnNewBookArrivedListener listener = mListenerList.getBroadcastItem(i);
+             listener.onNewBookArrived(book);
+         }
+        mListenerList.finishBroadcast();
+    }
+
+
+    private class ServiceWorker implements Runnable{
+
+        @Override
+        public void run() {
+
+            while (!mIsServiceDistory.get()){
+
+                Log.d(TAG,"运行到94了");
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                int bookId = mBookList.size()+1;
+                Book book = new Book(bookId,"new Book#"+bookId);
+                mBookList.add(book);
+
+                try {
+                    onNewBookArrived(book);
+                } catch (RemoteException e) {
+
+                    e.printStackTrace();
+                }
+
+
+            }
+
+        }
+    }
 
 
 
@@ -80,6 +116,7 @@ public class BookManagerService extends Service {
         Log.d(TAG, TAG + " 启动了!!");
         mBookList.add(new Book(1, "adnroid"));
         mBookList.add(new Book(2,"ios"));
+        new Thread(new ServiceWorker()).start();
     }
 
     @Nullable
@@ -89,5 +126,9 @@ public class BookManagerService extends Service {
         return mBinder;
     }
 
-
+    @Override
+    public void onDestroy() {
+        mIsServiceDistory.set(true);
+        super.onDestroy();
+    }
 }
